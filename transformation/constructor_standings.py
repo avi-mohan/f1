@@ -37,7 +37,12 @@ display(final_df.filter("race_year == 2020"))
 
 # COMMAND ----------
 
-final_df.write.parquet(f"{presentation_folder_path}/constructor_standings")
+final_df.write.format("parquet").saveAsTable("f1_presentation.constructor_standings")
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC select * from f1_presentation.constructor_standings
 
 # COMMAND ----------
 

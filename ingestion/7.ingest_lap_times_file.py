@@ -9,6 +9,11 @@ v_data_source = dbutils.widgets.get("p_data_source")
 
 # COMMAND ----------
 
+dbutils.widgets.text("p_file_date", "2021-03-28")
+v_file_date = dbutils.widgets.get("p_file_date")
+
+# COMMAND ----------
+
 # MAGIC %run "../includes/configuration"
 
 # COMMAND ----------
@@ -38,7 +43,7 @@ lap_times_schema = StructType(fields=[StructField("raceId", IntegerType(), False
 
 lap_times_df = spark.read \
 .schema(lap_times_schema) \
-.csv(f"{raw_folder_path}/lap_times")
+.csv(f"{raw_folder_path}/{v_file_date}/lap_times")
 
 # COMMAND ----------
 
@@ -60,7 +65,8 @@ from pyspark.sql.functions import lit
 final_df = lap_times_with_ingestion_date_df.withColumnRenamed("driverId", "driver_id") \
 .withColumnRenamed("raceId", "race_id") \
 .withColumn("ingestion_date", current_timestamp()) \
-.withColumn("data_source", lit(v_data_source))
+.withColumn("data_source", lit(v_data_source)) \
+.withColumn("file_date", lit(v_file_date))
 
 # COMMAND ----------
 
@@ -69,7 +75,19 @@ final_df = lap_times_with_ingestion_date_df.withColumnRenamed("driverId", "drive
 
 # COMMAND ----------
 
-final_df.write.mode("overwrite").parquet(f"{processed_folder_path}/lap_times")
+overwrite_partition(final_df, "f1_processed", "lap_times", "race_id")
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC --drop table f1_processed.lap_times
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC select race_id, count(1) from f1_processed.lap_times
+# MAGIC group by race_id
+# MAGIC order by race_id desc
 
 # COMMAND ----------
 

@@ -41,7 +41,12 @@ display(final_df)
 
 # COMMAND ----------
 
-final_df.write.parquet(f"{presentation_folder_path}/driver_standings")
+final_df.write.format("parquet").saveAsTable("f1_presentation.driver_standings")
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC select * from f1_presentation.driver_standings
 
 # COMMAND ----------
 
