@@ -98,6 +98,10 @@ results_final_df = results_with_ingestion_date_df.drop(col("statusId"))
 
 # COMMAND ----------
 
+results_deduped_df = results_final_df.dropDuplicates(["race_id", "driver_id"])
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC ##### Step 4 - Write to output to processed container in parquet format
 
@@ -124,16 +128,29 @@ results_final_df = results_with_ingestion_date_df.drop(col("statusId"))
 
 # COMMAND ----------
 
-overwrite_partition(results_final_df, "f1_processed", "results", "race_id")
+# overwrite_partition(results_final_df, "f1_processed", "results", "race_id")
+
+# COMMAND ----------
+
+merge_condition = "tgt.result_id = src.result_id AND tgt.race_id = src.race_id"
+
+merge_delta_data(results_deduped_df, "f1_processed", "results", processed_folder_path, merge_condition, 'race_id')
 
 # COMMAND ----------
 
 # MAGIC %sql
-# MAGIC select race_id, count(1)
-# MAGIC from f1_processed.results 
-# MAGIC group by race_id
-# MAGIC order by race_id desc
+# MAGIC select race_id, driver_id, count(1)
+# MAGIC from f1_processed.results
+# MAGIC group by race_id, driver_id
+# MAGIC having count(1) > 1
+# MAGIC order by race_id, driver_id desc
 
 # COMMAND ----------
 
 dbutils.notebook.exit("Success")
+
+# COMMAND ----------
+
+# MAGIC %sql
+# MAGIC select count(1) from f1_processed.results 
+# MAGIC where file_date = "2021-03-21"
